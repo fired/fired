@@ -23,4 +23,4 @@ Why do programmers prefer dark mode? Because light attracts bugs.
 
 <b>My GitHub Stats</b>
 
-[![GitHub Streak](https://streak-stats.demolab.com/?user=fired)](https://git.io/streak-stats)
+[![GitHub Streak](https://streak-stats.demolab.com?user=fired&theme=whatsapp-dark2)](https://git.io/streak-stats)
