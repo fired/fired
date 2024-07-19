@@ -23,6 +23,5 @@ Why do programmers prefer dark mode? Because light attracts bugs.
 
 <b>My GitHub Stats</b>
 
-<img width="400" src="https://github-readme-stats.vercel.app/api/top-langs/?username=fired&layout=compact&theme=onedark&hide_border=false&title_color=03AC13&text_color=C3D1D9&bg_color=0D1117" />
 [![GitHub Streak](https://streak-stats.demolab.com?user=fired&theme=whatsapp-dark2)](https://git.io/streak-stats)
-
+<img width="400" src="https://github-readme-stats.vercel.app/api/top-langs/?username=fired&layout=compact&theme=onedark&hide_border=false&title_color=03AC13&text_color=C3D1D9&bg_color=0D1117" />
