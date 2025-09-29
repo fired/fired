@@ -6,11 +6,6 @@ BA in Computer Science
 
 Why do programmers prefer dark mode? Because light attracts bugs.
 
-* 🖥️  See my website at [blond.dev](http://blond.dev)
-* 🚀  I'm currently working on [journal](http://journal.devblond.com/)
-* 🧠  I'm learning Go
-* 🤝  I'm open to collaborating on interesting projects
-
 ### Skills
 
 <p align="left">
