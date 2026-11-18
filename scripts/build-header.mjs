@@ -3,6 +3,7 @@
 import { execSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { encodePng } from "./png.mjs";
+import { textPath, textWidth } from "./pixel-font.mjs";
 
 const CONFIG = {
   login: process.env.PROFILE_LOGIN || process.env.GITHUB_REPOSITORY_OWNER || "fired",
@@ -332,21 +333,44 @@ function buildSvg(themeName, stats, frames) {
   const dashes = Array.from({ length: 16 }, (_, i) => `<rect x="${i * 64}" y="222" width="28" height="4" fill="${theme.muted}" opacity=".55"/>`).join("");
   const posts = Array.from({ length: 8 }, (_, i) => `<rect x="${i * 128 + 40}" y="196" width="4" height="8" fill="${theme.muted}" opacity=".5"/><rect x="${i * 128 + 40}" y="196" width="4" height="4" fill="#ff8a3d" opacity=".8"/>`).join("");
 
-  // Highway signs for your top languages, scrolling past at road speed.
+  // Pixel highway signs for your top languages, scrolling past at road speed.
+  // Each sign is defined once and reused; copies before and after the strip
+  // keep a sign on screen across the loop seam, however many languages there are.
   const SIGN_GAP = 320;
+  const DOT = 2;
   const langs = stats.languages || [];
-  const stripLen = langs.length * SIGN_GAP;
-  const sign = (l, x) => {
-    const w = Math.max(88, Math.round(l.name.length * 7.4) + 28);
-    const left = x - w / 2;
-    return `<g>` +
-      `<rect x="${left + 12}" y="172" width="4" height="22" fill="#5b6275"/><rect x="${left + w - 16}" y="172" width="4" height="22" fill="#5b6275"/>` +
-      `<rect x="${left}" y="138" width="${w}" height="38" rx="4" fill="#17603f"/>` +
-      `<rect x="${left + 3}" y="141" width="${w - 6}" height="32" rx="2.5" fill="none" stroke="#e8f3ec" stroke-width="1.5"/>` +
-      `<text x="${x}" y="157" class="sign-name">${l.name}</text>` +
-      `<text x="${x}" y="169" class="sign-pct">${l.pct}%</text></g>`;
-  };
-  const signs = [0, 1].flatMap((copy) => langs.map((l, i) => sign(l, 560 + i * SIGN_GAP + copy * stripLen))).join("");
+  const stripLen = Math.max(1, langs.length) * SIGN_GAP;
+  const snap = (v) => Math.ceil(v / P) * P;
+  const signDefs = langs.map((l, i) => {
+    const name = l.name.toUpperCase();
+    const pct = `${Math.round(l.pct)}%`;
+    const w = snap(Math.max(textWidth(name, DOT), textWidth(pct, DOT)) + 6 * P);
+    const h = 13 * P; // border, padding, two 7-dot lines and a gap
+    const left = -w / 2, top = 128;
+    const frame = [
+      // Chamfered green field: a cross of two rects leaves the corners cut.
+      `<rect x="${left + P}" y="${top}" width="${w - 2 * P}" height="${h}" fill="#17603f"/>`,
+      `<rect x="${left}" y="${top + P}" width="${w}" height="${h - 2 * P}" fill="#17603f"/>`,
+      // Inset white border, also chamfered.
+      `<path d="M${left + 2 * P} ${top + P}h${w - 4 * P}v${DOT}h${-(w - 4 * P)}z` +
+        `M${left + 2 * P} ${top + h - P - DOT}h${w - 4 * P}v${DOT}h${-(w - 4 * P)}z` +
+        `M${left + P} ${top + 2 * P}h${DOT}v${h - 4 * P}h${-DOT}z` +
+        `M${left + w - P - DOT} ${top + 2 * P}h${DOT}v${h - 4 * P}h${-DOT}z" fill="#e8f3ec"/>`,
+      // Posts.
+      `<rect x="${left + 3 * P}" y="${top + h}" width="${P}" height="${196 - top - h}" fill="#5b6275"/>`,
+      `<rect x="${left + w - 4 * P}" y="${top + h}" width="${P}" height="${196 - top - h}" fill="#5b6275"/>`,
+    ].join("");
+    const nameX = -Math.round(textWidth(name, DOT) / 2 / DOT) * DOT;
+    const pctX = -Math.round(textWidth(pct, DOT) / 2 / DOT) * DOT;
+    const text = `<path d="${textPath(name, nameX, top + 5 * DOT, DOT)}" fill="#ffffff"/>` +
+      `<path d="${textPath(pct, pctX, top + 14 * DOT, DOT)}" fill="#bfe6cf"/>`;
+    return `<g id="sign${i}">${frame}${text}</g>`;
+  }).join("");
+  const copies = [];
+  for (let c = -1; c * stripLen < W + stripLen; c++) copies.push(c);
+  const signs = langs.length
+    ? copies.flatMap((c) => langs.map((_, i) => `<use href="#sign${i}" x="${560 + i * SIGN_GAP + c * stripLen}"/>`)).join("")
+    : "";
   const signDur = ((stripLen * dashDur) / 64).toFixed(2);
 
   const hud = [
@@ -371,9 +395,6 @@ function buildSvg(themeName, stats, frames) {
   .value { font-size: 20px; font-weight: 700; fill: ${theme.text}; }
   .unit { font-size: 11px; font-weight: 400; fill: ${theme.muted}; }
   .road { animation: road ${dashDur}s linear infinite; }
-  .sign-name, .sign-pct { font-family: "Inter Embed", system-ui, sans-serif; text-anchor: middle; fill: #ffffff; }
-  .sign-name { font-size: 12px; font-weight: 600; }
-  .sign-pct { font-size: 10px; font-weight: 400; fill-opacity: .8; }
   .signs { animation: signs ${signDur}s linear infinite; }
   .posts { animation: posts ${(dashDur * 2).toFixed(2)}s linear infinite; }
   .body { animation: bounce .5s steps(1) infinite; }
@@ -384,6 +405,7 @@ function buildSvg(themeName, stats, frames) {
   @media (prefers-reduced-motion: reduce) { .road, .posts, .signs, .body { animation: none; } }
 </style>
 <defs>
+  ${signDefs}
   <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation="5" flood-color="#02030a" flood-opacity=".7"/></filter>
   <clipPath id="scene"><rect width="${W}" height="${SCENE_H}" rx="12"/></clipPath>
   <linearGradient id="beam" x1="0" x2="1">
