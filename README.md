@@ -53,12 +53,6 @@
 <p align="center">
   <a href="https://github.com/fired?tab=repositories">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="cards/stats-dark.svg">
-      <img src="cards/stats-light.svg" width="49%" alt="GitHub stats">
-    </picture>
-  </a>
-  <a href="https://github.com/fired?tab=repositories">
-    <picture>
       <source media="(prefers-color-scheme: dark)" srcset="cards/languages-dark.svg">
       <img src="cards/languages-light.svg" width="49%" alt="Top languages">
     </picture>

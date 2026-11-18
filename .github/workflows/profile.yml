@@ -21,7 +21,6 @@ concurrency:
 env:
   CARD_DARK: hide_border=true&disable_animations=true&bg_color=00000000&title_color=3dffa0&text_color=c9d1d9&icon_color=8f5cff&ring_color=3dffa0
   CARD_LIGHT: hide_border=true&disable_animations=true&bg_color=00000000&title_color=1a7f5a&text_color=1f2328&icon_color=6639ba&ring_color=1a7f5a
-  STATS: username=fired&show_icons=true&rank_icon=github&card_width=420
   LANGS: username=fired&layout=compact&langs_count=6&card_width=420&hide=html,css
 
 jobs:
@@ -39,22 +38,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Stats card, dark
-        uses: stats-organization/github-readme-stats-action@v2
-        with:
-          card: stats
-          options: ${{ env.STATS }}&${{ env.CARD_DARK }}
-          path: cards/stats-dark.svg
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fail_on_error: "true"
-      - name: Stats card, light
-        uses: stats-organization/github-readme-stats-action@v2
-        with:
-          card: stats
-          options: ${{ env.STATS }}&${{ env.CARD_LIGHT }}
-          path: cards/stats-light.svg
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fail_on_error: "true"
       - name: Languages card, dark
         uses: stats-organization/github-readme-stats-action@v2
         with:

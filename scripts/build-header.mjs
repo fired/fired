@@ -298,11 +298,9 @@ function buildSvg(themeName, stats, frames) {
 
   const hud = [
     ["ODOMETER", `${fmt(stats.total)}`, "this year"],
-    ["SPEED", `${fmt(stats.week)}`, "last 7 days"],
     ["STREAK", `${fmt(stats.streak)}`, stats.streak === 1 ? "day" : "days"],
-    ["BEST DAY", `${fmt(stats.best)}`, "in one day"],
   ].map(([label, value, unit], i) => {
-    const x = 16 + i * 210;
+    const x = 16 + i * 240;
     return `<text x="${x}" y="284" class="label">${label}</text>` +
       `<text x="${x}" y="308" class="value">${value}<tspan class="unit" dx="6">${unit}</tspan></text>`;
   }).join("");

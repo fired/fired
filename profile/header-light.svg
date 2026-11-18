@@ -43,5 +43,5 @@
   <text x="28" y="50" class="name">fired</text>
   <text x="29" y="72" class="tag">building things after dark</text>
 </g>
-<text x="16" y="284" class="label">ODOMETER</text><text x="16" y="308" class="value">5,913<tspan class="unit" dx="6">this year</tspan></text><text x="226" y="284" class="label">SPEED</text><text x="226" y="308" class="value">131<tspan class="unit" dx="6">last 7 days</tspan></text><text x="436" y="284" class="label">STREAK</text><text x="436" y="308" class="value">5<tspan class="unit" dx="6">days</tspan></text><text x="646" y="284" class="label">BEST DAY</text><text x="646" y="308" class="value">192<tspan class="unit" dx="6">in one day</tspan></text>
+<text x="16" y="284" class="label">ODOMETER</text><text x="16" y="308" class="value">5,913<tspan class="unit" dx="6">this year</tspan></text><text x="256" y="284" class="label">STREAK</text><text x="256" y="308" class="value">5<tspan class="unit" dx="6">days</tspan></text>
 </svg>
