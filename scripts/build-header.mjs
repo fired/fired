@@ -11,6 +11,11 @@ const CONFIG = {
 };
 
 const OUT_DIR = "profile";
+// Inter (SIL OFL, see fonts/OFL.txt), subset to printable ASCII and embedded,
+// because SVGs shown through <img> cannot load external fonts.
+const font = (w) => readFileSync(`fonts/inter-${w}.woff2`).toString("base64");
+const FONT_CSS = [400, 600].map((w) =>
+  `@font-face { font-family: "Inter Embed"; font-weight: ${w}; src: url(data:font/woff2;base64,${font(w)}) format("woff2"); }`).join("\n  ");
 const CACHE = "profile/github-cache.json";
 
 // Scene grid: every pixel is drawn as a 4x4 block.
@@ -305,11 +310,12 @@ function buildSvg(themeName, stats, frames) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">
 <title>${CONFIG.name}: ${CONFIG.tagline}</title>
 <style>
+  ${FONT_CSS}
   image { image-rendering: pixelated; image-rendering: crisp-edges; }
   text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  .name, .tag { paint-order: stroke; stroke: #04050d; stroke-opacity: .75; stroke-linejoin: round; }
-  .name { font-size: 28px; font-weight: 700; fill: #eef1ff; stroke-width: 5px; }
-  .tag { font-size: 12px; fill: #dfe5ff; letter-spacing: .5px; stroke-width: 4px; }
+  .name, .tag { font-family: "Inter Embed", system-ui, sans-serif; filter: url(#soft); }
+  .name { font-size: 30px; font-weight: 600; letter-spacing: -.6px; fill: #ffffff; }
+  .tag { font-size: 13px; font-weight: 400; letter-spacing: .1px; fill: #ffffff; fill-opacity: .78; }
   .label { font-size: 10px; letter-spacing: 2px; fill: ${theme.muted}; }
   .value { font-size: 20px; font-weight: 700; fill: ${theme.text}; }
   .unit { font-size: 11px; font-weight: 400; fill: ${theme.muted}; }
@@ -322,6 +328,7 @@ function buildSvg(themeName, stats, frames) {
   @media (prefers-reduced-motion: reduce) { .road, .posts, .body { animation: none; } }
 </style>
 <defs>
+  <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation="5" flood-color="#02030a" flood-opacity=".7"/></filter>
   <clipPath id="scene"><rect width="${W}" height="${SCENE_H}" rx="12"/></clipPath>
   <linearGradient id="beam" x1="0" x2="1">
     <stop offset="0" stop-color="#fff2b0" stop-opacity=".42"/>
@@ -341,8 +348,8 @@ function buildSvg(themeName, stats, frames) {
     <g class="body">${body}</g>
     ${wheels}
   </g>
-  <text x="24" y="44" class="name">${CONFIG.name}</text>
-  <text x="25" y="64" class="tag">${CONFIG.tagline}</text>
+  <text x="28" y="50" class="name">${CONFIG.name}</text>
+  <text x="29" y="72" class="tag">${CONFIG.tagline}</text>
 </g>
 ${hud}
 </svg>
