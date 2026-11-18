@@ -1,0 +1,11 @@
+{
+  "name": "fired-profile",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-header.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
