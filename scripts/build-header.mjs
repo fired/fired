@@ -17,6 +17,8 @@ const font = (w) => readFileSync(`fonts/inter-${w}.woff2`).toString("base64");
 const FONT_CSS = [400, 600].map((w) =>
   `@font-face { font-family: "Inter Embed"; font-weight: ${w}; src: url(data:font/woff2;base64,${font(w)}) format("woff2"); }`).join("\n  ");
 const CACHE = "profile/github-cache.json";
+// Markup and config languages that would crowd out the real ones.
+const SKIP_LANGS = new Set(["HTML", "CSS", "SCSS", "EJS", "Dockerfile", "Makefile", "Batchfile", "Shell", "PowerShell"]);
 
 // Scene grid: every pixel is drawn as a 4x4 block.
 const P = 4;
@@ -42,7 +44,9 @@ function token() {
 
 async function fetchStats(login) {
   const query = `query($login:String!){user(login:$login){contributionsCollection{contributionCalendar{
-    totalContributions weeks{contributionDays{date contributionCount}}}}}}`;
+    totalContributions weeks{contributionDays{date contributionCount}}}}
+    repositories(first:100, ownerAffiliations:OWNER, isFork:false, privacy:PUBLIC){nodes{isPrivate
+      languages(first:10, orderBy:{field:SIZE, direction:DESC}){edges{size node{name}}}}}}}`;
   const res = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: { Authorization: `bearer ${token()}`, "Content-Type": "application/json", "User-Agent": "profile-header" },
@@ -59,8 +63,26 @@ async function fetchStats(login) {
   let streak = 0;
   while (i >= 0 && counts[i] > 0) { streak++; i--; }
 
+  // Bytes of code per language across public, non-fork repos you own.
+  // Private repos are excluded in the query and again here, so nothing about
+  // them ever reaches the header even when run locally with a broader token.
+  const bytes = new Map();
+  for (const repo of json.data.user.repositories.nodes) {
+    if (repo.isPrivate) continue;
+    for (const e of repo.languages.edges) {
+      if (SKIP_LANGS.has(e.node.name)) continue;
+      bytes.set(e.node.name, (bytes.get(e.node.name) || 0) + e.size);
+    }
+  }
+  const sum = [...bytes.values()].reduce((a, b) => a + b, 0) || 1;
+  const languages = [...bytes].sort((a, b) => b[1] - a[1])
+    .map(([name, size]) => ({ name, pct: Math.round((size / sum) * 1000) / 10 }))
+    .filter((l) => l.pct >= 1)
+    .slice(0, 5);
+
   return {
     total: cal.totalContributions,
+    languages,
     week: counts.slice(-7).reduce((a, b) => a + b, 0),
     streak,
     best: Math.max(0, ...counts),
@@ -76,7 +98,7 @@ async function loadStats() {
   } catch (err) {
     console.warn(`Could not fetch contributions (${err.message}); using cache.`);
     if (existsSync(CACHE)) return JSON.parse(readFileSync(CACHE, "utf8"));
-    return { total: 0, week: 0, streak: 0, best: 0 };
+    return { total: 0, week: 0, streak: 0, best: 0, languages: [] };
   }
 }
 
@@ -225,34 +247,48 @@ function renderFrame(frame, theme) {
 
 // ---------------------------------------------------------------- car
 
-// An original pixel coupe, facing right. Wheels are drawn separately.
-const CAR = [
-  "............bbbbbbbbbb............",
-  "..........bbwwwwwbwwwwwbb.........",
-  ".........bwwswwwwbwwswwwwbb.......",
-  ".......bbbbbbbbbbbbbbbbbbbbbbb....",
-  "...bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.",
-  "..tbbbbbbbbbbbbbbbbbbbbbbbbbbbbbll",
-  "..tccccccccccccccccccccccccccccccl",
-  "...dddddddddddddddddddddddddddddd.",
-  "....dddddddddddddddddddddddddddd..",
+// A pixel hot hatch in the style of a Golf R: Lapiz Blue, thick C-pillar,
+// raked windshield, LED headlight strip, five-spoke wheels and quad exhausts.
+// Each row lists [from, to, colour] runs; the car faces right.
+const CAR_W = 44;
+const CAR_H = 15;
+const CAR_ROWS = [
+  [[6, 24, "b"]],
+  [[5, 8, "b"], [9, 14, "w"], [15, 15, "b"], [16, 23, "w"], [24, 25, "b"]],
+  [[4, 7, "b"], [8, 14, "w"], [15, 15, "b"], [16, 25, "w"], [26, 27, "b"], [11, 11, "s"], [19, 19, "s"]],
+  [[3, 7, "b"], [8, 14, "w"], [15, 15, "b"], [16, 27, "w"], [28, 29, "b"], [20, 20, "s"]],
+  [[2, 33, "b"], [2, 3, "t"]],
+  [[2, 40, "b"], [2, 3, "t"]],
+  [[1, 42, "b"], [38, 42, "l"]],
+  [[1, 43, "b"], [42, 43, "d"]],
+  [[1, 43, "e"]],
+  [[1, 43, "d"]],
+  [[1, 2, "x"], [4, 5, "x"], [6, 42, "d"]],
 ];
-const WHEEL = [".kkkk.", "kkhhkk", "khcchk", "khcchk", "kkhhkk", ".kkkk."];
-const WHEELS = [[6, 6], [24, 6]];
-const CAR_H = 12;
+const WHEEL = [
+  "..kkkk..",
+  ".krrrrk.",
+  "krhrrhrk",
+  "krrhhrrk",
+  "krrhhrrk",
+  "krhrrhrk",
+  ".krrrrk.",
+  "..kkkk..",
+];
+const WHEELS = [[6, 7], [30, 7]];
 const CAR_COLORS = {
-  b: "#e2483d", d: "#8e2530", w: "#16303f", s: "#6fe3d0", c: "#c9cdd6",
-  l: "#fff2b0", t: "#ff3b3b", k: "#0a0a0f", h: "#3a3f4b",
+  b: "#2563c9", e: "#1d4f9e", d: "#123a78", w: "#121f2c", s: "#7cc4ee", x: "#b8bec9",
+  l: "#f4f8ff", t: "#ff3b3b", a: "#05070c", k: "#0b0c10", r: "#c3c9d3", h: "#5c6370",
 };
 
 function carRects() {
-  const grid = CAR.map((row) => row.padEnd(34, ".").split(""));
-  while (grid.length < CAR_H) grid.push(Array(34).fill("."));
-  // Cut wheel arches, then drop the wheels in.
+  const grid = Array.from({ length: CAR_H }, () => Array(CAR_W).fill("."));
+  CAR_ROWS.forEach((runs, y) => runs.forEach(([x0, x1, ch]) => { for (let x = x0; x <= x1; x++) grid[y][x] = ch; }));
+  // Dark wheel wells hug each tyre, then the wheels drop in.
   for (const [wx, wy] of WHEELS) {
-    for (let y = 0; y < grid.length; y++) {
-      for (let x = 0; x < 34; x++) {
-        if (Math.hypot(x + 0.5 - (wx + 3), y + 0.5 - (wy + 3)) < 4 && y >= 5) grid[y][x] = ".";
+    for (let y = 6; y < CAR_H; y++) {
+      for (let x = 0; x < CAR_W; x++) {
+        if (grid[y][x] !== "." && Math.hypot(x + 0.5 - (wx + 4), y + 0.5 - (wy + 4)) < 4.5) grid[y][x] = "a";
       }
     }
     WHEEL.forEach((row, dy) => row.split("").forEach((ch, dx) => { if (ch !== ".") grid[wy + dy][wx + dx] = ch; }));
@@ -264,7 +300,7 @@ function carRects() {
       const ch = row[x];
       let run = 1;
       while (x + run < row.length && row[x + run] === ch) run++;
-      if (ch !== ".") rects.push({ x, y, w: run, color: CAR_COLORS[ch], wheel: "kh".includes(ch) || (ch === "c" && y >= 8) });
+      if (ch !== ".") rects.push({ x, y, w: run, color: CAR_COLORS[ch], wheel: "krh".includes(ch) });
       x += run;
     }
   });
@@ -296,6 +332,23 @@ function buildSvg(themeName, stats, frames) {
   const dashes = Array.from({ length: 16 }, (_, i) => `<rect x="${i * 64}" y="222" width="28" height="4" fill="${theme.muted}" opacity=".55"/>`).join("");
   const posts = Array.from({ length: 8 }, (_, i) => `<rect x="${i * 128 + 40}" y="196" width="4" height="8" fill="${theme.muted}" opacity=".5"/><rect x="${i * 128 + 40}" y="196" width="4" height="4" fill="#ff8a3d" opacity=".8"/>`).join("");
 
+  // Highway signs for your top languages, scrolling past at road speed.
+  const SIGN_GAP = 320;
+  const langs = stats.languages || [];
+  const stripLen = langs.length * SIGN_GAP;
+  const sign = (l, x) => {
+    const w = Math.max(88, Math.round(l.name.length * 7.4) + 28);
+    const left = x - w / 2;
+    return `<g>` +
+      `<rect x="${left + 12}" y="172" width="4" height="22" fill="#5b6275"/><rect x="${left + w - 16}" y="172" width="4" height="22" fill="#5b6275"/>` +
+      `<rect x="${left}" y="138" width="${w}" height="38" rx="4" fill="#17603f"/>` +
+      `<rect x="${left + 3}" y="141" width="${w - 6}" height="32" rx="2.5" fill="none" stroke="#e8f3ec" stroke-width="1.5"/>` +
+      `<text x="${x}" y="157" class="sign-name">${l.name}</text>` +
+      `<text x="${x}" y="169" class="sign-pct">${l.pct}%</text></g>`;
+  };
+  const signs = [0, 1].flatMap((copy) => langs.map((l, i) => sign(l, 560 + i * SIGN_GAP + copy * stripLen))).join("");
+  const signDur = ((stripLen * dashDur) / 64).toFixed(2);
+
   const hud = [
     ["ODOMETER", `${fmt(stats.total)}`, "this year"],
     ["STREAK", `${fmt(stats.streak)}`, stats.streak === 1 ? "day" : "days"],
@@ -318,12 +371,17 @@ function buildSvg(themeName, stats, frames) {
   .value { font-size: 20px; font-weight: 700; fill: ${theme.text}; }
   .unit { font-size: 11px; font-weight: 400; fill: ${theme.muted}; }
   .road { animation: road ${dashDur}s linear infinite; }
+  .sign-name, .sign-pct { font-family: "Inter Embed", system-ui, sans-serif; text-anchor: middle; fill: #ffffff; }
+  .sign-name { font-size: 12px; font-weight: 600; }
+  .sign-pct { font-size: 10px; font-weight: 400; fill-opacity: .8; }
+  .signs { animation: signs ${signDur}s linear infinite; }
   .posts { animation: posts ${(dashDur * 2).toFixed(2)}s linear infinite; }
   .body { animation: bounce .5s steps(1) infinite; }
   @keyframes road { to { transform: translateX(-64px); } }
+  @keyframes signs { to { transform: translateX(-${stripLen}px); } }
   @keyframes posts { to { transform: translateX(-128px); } }
   @keyframes bounce { 50% { transform: translateY(-${P / 2}px); } }
-  @media (prefers-reduced-motion: reduce) { .road, .posts, .body { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .road, .posts, .signs, .body { animation: none; } }
 </style>
 <defs>
   <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation="5" flood-color="#02030a" flood-opacity=".7"/></filter>
@@ -337,11 +395,12 @@ function buildSvg(themeName, stats, frames) {
 </defs>
 <g clip-path="url(#scene)">
   ${images}
+  <g class="signs">${signs}</g>
   <g class="posts">${posts}</g>
   <g class="road">${dashes}</g>
-  <ellipse cx="${carX + 34 * P + 150}" cy="232" rx="170" ry="18" fill="url(#pool)"/>
-  <polygon points="${carX + 34 * P - 2},${carY + 5 * P} ${carX + 34 * P + 330},${carY - 6} ${carX + 34 * P + 330},${carY + CAR_H * P + 10} ${carX + 34 * P - 2},${carY + 7 * P}" fill="url(#beam)"/>
-  <circle cx="${carX + 2 * P}" cy="${carY + 6 * P}" r="18" fill="url(#tail)"/>
+  <ellipse cx="${carX + CAR_W * P + 150}" cy="232" rx="170" ry="18" fill="url(#pool)"/>
+  <polygon points="${carX + CAR_W * P - 2},${carY + 5 * P} ${carX + CAR_W * P + 330},${carY - 6} ${carX + CAR_W * P + 330},${carY + CAR_H * P + 10} ${carX + CAR_W * P - 2},${carY + 7 * P}" fill="url(#beam)"/>
+  <circle cx="${carX + 2 * P}" cy="${carY + 5 * P}" r="16" fill="url(#tail)"/>
   <g transform="translate(${carX} ${carY})">
     <g class="body">${body}</g>
     ${wheels}

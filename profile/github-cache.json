@@ -1,7 +1,25 @@
 {
-  "total": 5917,
-  "week": 135,
+  "total": 5918,
+  "languages": [
+    {
+      "name": "JavaScript",
+      "pct": 50.9
+    },
+    {
+      "name": "TypeScript",
+      "pct": 26.8
+    },
+    {
+      "name": "Python",
+      "pct": 14
+    },
+    {
+      "name": "C++",
+      "pct": 7.9
+    }
+  ],
+  "week": 136,
   "streak": 5,
   "best": 192,
-  "fetchedAt": "2026-11-18T17:35:16.683Z"
+  "fetchedAt": "2026-11-18T17:40:41.178Z"
 }

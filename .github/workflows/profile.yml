@@ -11,95 +11,39 @@ on:
       - scripts/**
       - .github/workflows/profile.yml
 
-# Nothing gets write access by default. Only the publish job, which runs no
-# third-party code, can push to this repository.
 permissions: {}
 
 concurrency:
   group: profile-refresh
   cancel-in-progress: false
 
-env:
-  CARD_DARK: hide_border=true&disable_animations=true&bg_color=00000000&title_color=3dffa0&text_color=c9d1d9&icon_color=8f5cff&ring_color=3dffa0
-  CARD_LIGHT: hide_border=true&disable_animations=true&bg_color=00000000&title_color=1a7f5a&text_color=1f2328&icon_color=6639ba&ring_color=1a7f5a
-  LANGS: username=fired&layout=compact&langs_count=6&card_width=420&hide=html,css
-
 jobs:
-  header:
+  refresh:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 22
-      - name: Draw the night drive header
-        run: npm run build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: profile
-          path: profile/
-          retention-days: 1
-
-  cards:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Languages card, dark
-        uses: stats-organization/github-readme-stats-action@2c498845f71017821efaad14293ebc736156ef21 # v2
-        with:
-          card: top-langs
-          options: ${{ env.LANGS }}&${{ env.CARD_DARK }}
-          path: cards/languages-dark.svg
-          token: ${{ secrets.GITHUB_TOKEN }}
-          core_version: 2.2.1
-          fail_on_error: "true"
-      - name: Languages card, light
-        uses: stats-organization/github-readme-stats-action@2c498845f71017821efaad14293ebc736156ef21 # v2
-        with:
-          card: top-langs
-          options: ${{ env.LANGS }}&${{ env.CARD_LIGHT }}
-          path: cards/languages-light.svg
-          token: ${{ secrets.GITHUB_TOKEN }}
-          core_version: 2.2.1
-          fail_on_error: "true"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: cards
-          path: cards/
-          retention-days: 1
-
-  publish:
-    needs: [header, cards]
-    runs-on: ubuntu-latest
+    # Only GitHub's own actions and this repository's dependency-free script run here.
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          name: profile
-          path: profile/
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: cards
-          path: cards/
+          node-version: 22
+
+      - name: Draw the night drive header
+        run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Commit if anything changed
         run: |
           # Only the expected generated files are ever committed.
-          git add profile/header-dark.svg profile/header-light.svg profile/github-cache.json \
-            cards/languages-dark.svg cards/languages-light.svg
+          git add profile/header-dark.svg profile/header-light.svg profile/github-cache.json
           if git diff --cached --quiet; then
             echo "Nothing changed."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: refresh profile header and cards"
+          git commit -m "chore: refresh profile header"
           git push

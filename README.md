@@ -50,13 +50,4 @@
   </tr>
 </table>
 
-<p align="center">
-  <a href="https://github.com/fired?tab=repositories">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="cards/languages-dark.svg">
-      <img src="cards/languages-light.svg" width="49%" alt="Top languages">
-    </picture>
-  </a>
-</p>
-
-<!-- The header and cards are regenerated nightly by .github/workflows/profile.yml. -->
+<!-- The header is regenerated nightly by .github/workflows/profile.yml. -->
