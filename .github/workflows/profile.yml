@@ -11,8 +11,9 @@ on:
       - scripts/**
       - .github/workflows/profile.yml
 
-permissions:
-  contents: write
+# Nothing gets write access by default. Only the publish job, which runs no
+# third-party code, can push to this repository.
+permissions: {}
 
 concurrency:
   group: profile-refresh
@@ -24,20 +25,32 @@ env:
   LANGS: username=fired&layout=compact&langs_count=6&card_width=420&hide=html,css
 
 jobs:
-  refresh:
+  header:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-
       - name: Draw the night drive header
         run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: profile
+          path: profile/
+          retention-days: 1
 
+  cards:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
       - name: Languages card, dark
         uses: stats-organization/github-readme-stats-action@2c498845f71017821efaad14293ebc736156ef21 # v2
         with:
@@ -45,6 +58,7 @@ jobs:
           options: ${{ env.LANGS }}&${{ env.CARD_DARK }}
           path: cards/languages-dark.svg
           token: ${{ secrets.GITHUB_TOKEN }}
+          core_version: 2.2.1
           fail_on_error: "true"
       - name: Languages card, light
         uses: stats-organization/github-readme-stats-action@2c498845f71017821efaad14293ebc736156ef21 # v2
@@ -53,11 +67,34 @@ jobs:
           options: ${{ env.LANGS }}&${{ env.CARD_LIGHT }}
           path: cards/languages-light.svg
           token: ${{ secrets.GITHUB_TOKEN }}
+          core_version: 2.2.1
           fail_on_error: "true"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cards
+          path: cards/
+          retention-days: 1
 
+  publish:
+    needs: [header, cards]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: profile
+          path: profile/
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: cards
+          path: cards/
       - name: Commit if anything changed
         run: |
-          git add profile cards
+          # Only the expected generated files are ever committed.
+          git add profile/header-dark.svg profile/header-light.svg profile/github-cache.json \
+            cards/languages-dark.svg cards/languages-light.svg
           if git diff --cached --quiet; then
             echo "Nothing changed."
             exit 0
