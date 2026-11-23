@@ -1,5 +1,5 @@
 {
-  "total": 5928,
+  "total": 5906,
   "languages": [
     {
       "name": "JavaScript",
@@ -18,8 +18,8 @@
       "pct": 7.6
     }
   ],
-  "week": 88,
+  "week": 36,
   "streak": 0,
   "best": 192,
-  "fetchedAt": "2026-11-22T07:08:23.153Z"
+  "fetchedAt": "2026-11-23T07:54:50.925Z"
 }
