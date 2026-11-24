@@ -11,9 +11,9 @@
   .label { font-size: 10px; letter-spacing: 2px; fill: #59636e; }
   .value { font-size: 20px; font-weight: 700; fill: #1f2328; }
   .unit { font-size: 11px; font-weight: 400; fill: #59636e; }
-  .road { animation: road 0.48s linear infinite; }
-  .signs { animation: signs 9.60s linear infinite; }
-  .posts { animation: posts 0.96s linear infinite; }
+  .road { animation: road 0.51s linear infinite; }
+  .signs { animation: signs 10.20s linear infinite; }
+  .posts { animation: posts 1.02s linear infinite; }
   .body { animation: bounce .5s steps(1) infinite; }
   @keyframes road { to { transform: translateX(-64px); } }
   @keyframes signs { to { transform: translateX(-1280px); } }
@@ -47,5 +47,5 @@
   <text x="28" y="50" class="name">fired</text>
   <text x="29" y="72" class="tag">building things after dark</text>
 </g>
-<text x="16" y="284" class="label">ODOMETER</text><text x="16" y="308" class="value">5,906<tspan class="unit" dx="6">this year</tspan></text><text x="256" y="284" class="label">STREAK</text><text x="256" y="308" class="value">0<tspan class="unit" dx="6">days</tspan></text>
+<text x="16" y="284" class="label">ODOMETER</text><text x="16" y="308" class="value">5,917<tspan class="unit" dx="6">this year</tspan></text><text x="256" y="284" class="label">STREAK</text><text x="256" y="308" class="value">1<tspan class="unit" dx="6">day</tspan></text>
 </svg>
